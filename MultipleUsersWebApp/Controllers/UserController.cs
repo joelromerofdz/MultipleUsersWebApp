@@ -1,7 +1,7 @@
 using Application.Services.Interfaces.Users;
-using Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Dtos.Users;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace MultipleUsersWebApp.Controllers
 {
@@ -10,17 +10,34 @@ namespace MultipleUsersWebApp.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
-        public UserController(IUserService userService)
+        private readonly IMemoryCache _memoryCache;
+        public UserController(
+            IUserService userService,
+            IMemoryCache memoryCache)
         {
-
             _userService = userService;
+            _memoryCache = memoryCache;
         }
 
         [HttpGet(Name = "Users")]
         public async Task<IActionResult> Get()
         {
-            var users = await _userService.GetUsersAsync();
-            return Ok(users);
+            string cacheKey = "usersData";
+
+            if (_memoryCache.TryGetValue(cacheKey, out IEnumerable<UserResponse> usersData))
+            {
+                return Ok(usersData);
+            }
+
+            usersData = await _userService.GetUsersAsync();
+
+            var cacheEntryOptions = new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2)
+            };
+
+            _memoryCache.Set(cacheKey, usersData, cacheEntryOptions);
+            return Ok(usersData);
         }
 
         [HttpPost("MultipleUsers")]
@@ -40,8 +57,22 @@ namespace MultipleUsersWebApp.Controllers
         [HttpGet("UsersByCountry/{country}")]
         public async Task<IActionResult> GetUsersByCountry(string country)
         {
-            var users = await _userService.GetUsersByCountryAsync(country);
-            return Ok(users);
+            string cacheKey = "userData";
+
+            if (_memoryCache.TryGetValue(cacheKey, out IEnumerable<UserResponse> usersData))
+            {
+                return Ok(usersData);
+            }
+
+            usersData = await _userService.GetUsersByCountryAsync(country);
+
+            var cacheEntryOptions = new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2)
+            };
+
+            _memoryCache.Set(cacheKey, usersData, cacheEntryOptions);
+            return Ok(usersData);
         }
     }
 }

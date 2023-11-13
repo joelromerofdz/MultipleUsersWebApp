@@ -41,6 +41,7 @@ builder.Services.AddScoped<IRepository<City, CityResponse>, CityRepository>();
 builder.Services.AddScoped<ICityService, CityService>();
 
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+builder.Services.AddMemoryCache();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
